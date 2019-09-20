@@ -32,14 +32,14 @@ import (
 
 	"golang.org/x/oauth2/google"
 
-	"golang.org/x/oauth2/jws"
 	"github.com/coreos/go-oidc"
+	"golang.org/x/oauth2/jws"
 )
 
 const (
-	googleRootCertURL = "https://www.googleapis.com/oauth2/v3/certs"
-	audience = "https://example.com"
-	jsonCert            = "/path/to/service_account.json"
+	googleRootCertURL      = "https://www.googleapis.com/oauth2/v3/certs"
+	audience               = "https://example.com"
+	jsonCert               = "/path/to/service_account.json"
 	metadataIdentityDocURL = "http://metadata/computeMetadata/v1/instance/service-accounts/default/identity"
 )
 
@@ -147,8 +147,9 @@ func verifyGoogleIDToken(ctx context.Context, aud string, token string) (bool, e
 
 	keySet := oidc.NewRemoteKeySet(ctx, googleRootCertURL)
 
+	// https://github.com/coreos/go-oidc/blob/master/verify.go#L36
 	var config = &oidc.Config{
-		SkipClientIDCheck: true,
+		SkipClientIDCheck: false,
 		ClientID:          aud,
 	}
 	verifier := oidc.NewVerifier("https://accounts.google.com", keySet, config)

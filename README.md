@@ -149,12 +149,22 @@ Each while using
 
 ### gcloud
 
+- ServiceAccount
 ```bash
  gcloud auth activate-service-account --key-file=/path/to/svc_account.json
  gcloud auth print-identity-token --audience=https://example.com
 ```
 
-* 7/10/19: gcloud supports only getting an IDToken for Service Account JSON
+- ComputeEngine
+```
+ gcloud auth print-identity-token --audience=https://example.com
+```
+
+- ImpersonatedCredentials
+
+```
+ gcloud auth print-identity-token --audiences=https://example.com --impersonate-service-account impersonated-account@projectID.iam.gserviceaccount.com
+```
 
 ### python
 
