@@ -40,7 +40,7 @@ Service Account key must be in .p12 format:
     make
     make install
 
-    gcc google_oidc.c -L./cJSON -lcrypto -lcjson  -lcurl -o google_oidc
+    gcc google_oidc.c -lcrypto -lcjson  -lcurl -o google_oidc
 
 6) Run
      ./google_oidc
