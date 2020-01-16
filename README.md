@@ -182,6 +182,7 @@ Each while using
 ### nodejs
 
 - [nodejs/GoogleIdToken.js](nodejs/GoogleIDToken.js)
+  Support added in [PR#867](https://github.com/googleapis/google-auth-library-nodejs/pull/867)
 
 ### dotnet
 
