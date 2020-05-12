@@ -67,13 +67,13 @@ If you have a Google-issued Service account certificate file locally, you can si
 
 The flow using a json is:
   *  Use the service account JSON file to sign a JWT with intended final audience set as target_audience.
-  *  Exchange the signed JWT with Google token endpoint: https://www.googleapis.com/oauth2/v3/certs
-  *  Google will verify the signature and identify the aller as the Service Account (since the caller had possession of the private key), then issue an id_token with the aud: field set to what the target_audience was set.
-  *  Return the id_token in the response back to the client.
+  *  Exchange the signed JWT with Google token endpoint: `https://oauth2.googleapis.com/token`
+  *  Google will verify the signature and identify the aller as the Service Account (since the caller had possession of the private key), then issue an `id_token` with the `aud:` field set to what the `target_audience` was set.
+  *  Return the `id_token` in the response back to the client.
 
 ### Metadata Server
 
-If a metadata server is available while running on Compute Engine, Appengine 2nd Generation, Cloud Functions or even Kubernetes engine, getting an id_token is simple: query the server itself for the token and provide the audience field the token should be for.
+If a metadata server is available while running on Compute Engine, Appengine 2nd Generation, Cloud Functions or even Kubernetes engine, getting an `id_token` is simple: query the server itself for the token and provide the audience field the token should be for.
 
 For example, the following `curl` command on any platform with metadata server will return an id_token:
 
@@ -177,7 +177,8 @@ Each while using
 ### go
 
 - [golang/GoogleIDToken.go](golang/GoogleIDToken.go)
-- [github.com/salrashid123/oauth2/google](https://github.com/salrashid123/oauth2)
+- update `5/10/20` [google.golang.org/api/idtoken](https://pkg.go.dev/google.golang.org/api@v0.23.0/idtoken?tab=doc)
+- original implementation: ([github.com/salrashid123/oauth2/google](https://github.com/salrashid123/oauth2)
 
 ### nodejs
 
