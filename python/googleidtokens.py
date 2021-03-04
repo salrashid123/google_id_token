@@ -19,6 +19,7 @@ from google.oauth2 import service_account
 import google.auth
 import google.auth.transport.requests
 from google.auth.transport.requests import AuthorizedSession
+from google.auth import compute_engine 
 
 # pip install google-auth requests
 
@@ -40,10 +41,9 @@ def GetIDTokenFromServiceAccount(svcAccountFile, target_audience):
 
 def GetIDTokenFromComputeEngine(target_audience):
   request = google.auth.transport.requests.Request()
-  url = metadata_identity_doc_url + "?audience=" + target_audience
-  headers = {"Metadata-Flavor":"Google" }
-  resp = request(url, method='GET', headers=headers)
-  return resp.data
+  creds = compute_engine.IDTokenCredentials(request=request, target_audience=target_audience, use_metadata_identity_endpoint=True)
+  creds.refresh(request)
+  return creds.token
 
 def VerifyIDToken(token, certs_url,  audience=None):
    request = google.auth.transport.requests.Request()
