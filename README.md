@@ -15,6 +15,7 @@
   * [nodejs](#nodejs)
   * [dotnet](#dotnet)
 * [How to verify an ID Token?](#how-to-verify-an-id-token)
+  * [JWK Endpoints](#jwk-endpoints)
 * [References](#references)
 
 
@@ -197,7 +198,31 @@ You can verify OIDC tokens manually if the inbound framework you deployed an app
 
 Any validation should not just involve verifying the public certificate and validity but also that the audience claim matches the service being invoked.  For more information, see [Validating an ID Token](https://developers.google.com/identity/protocols/OpenIDConnect#validatinganidtoken).  You can find samples [here](https://developers.google.com/identity/sign-in/web/backend-auth#verify-the-integrity-of-the-id-token) that implement validation.
 
+This repo also includes various samples inline that verify tokens preferably by using google auth libraries (where applicable)
+
 It is recommend to always verify locally but for debugging, you can use the [tokenInfo endpoint](https://developers.google.com/identity/sign-in/web/backend-auth#calling-the-tokeninfo-endpoint) or services that decode like jwt.io.
+
+
+### JWK Endpoints
+
+The following lists out the JWK and OIDC endpoints for google, firebase and IAP
+
+- `Google`
+  - `JWK` [https://www.googleapis.com/oauth2/v3/certs](https://www.googleapis.com/oauth2/v3/certs)
+  - `x509` [https://www.googleapis.com/oauth2/v2/certs](https://www.googleapis.com/oauth2/v2/certs)
+  - [.well-known/openid-configuration](https://accounts.google.com/.well-known/openid-configuration)
+
+
+- `Firebase/Identity Platform`
+  - `JWK` [https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com](https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com)
+  - `x509` [https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com](https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com)
+  - `.well-known/openid-configuration`  `https://securetoken.google.com/YOUR_PROJECT_ID/.well-known/openid-configuration`  ([eg](https://securetoken.google.com/mineral-minutia-820/.well-known/openid-configuration))
+   
+- `IAP`
+  - `JWK` [https://www.gstatic.com/iap/verify/public_key-jwk](https://www.gstatic.com/iap/verify/public_key-jwk)
+  - `x509` [https://www.gstatic.com/iap/verify/public_key](https://www.gstatic.com/iap/verify/public_key)
+
+---
 
 ## References
 

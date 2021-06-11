@@ -25,11 +25,11 @@ from google.auth import compute_engine
 
 target_audience = 'https://example.com'
 
-url = 'https://cloud-run-url.example.com'
+url = 'https://httpbin.org/get'
 certs_url='https://www.googleapis.com/oauth2/v1/certs'
 metadata_identity_doc_url = "http://metadata/computeMetadata/v1/instance/service-accounts/default/identity"
 
-svcAccountFile = '/path/to/svc_account.json'
+svcAccountFile = '/path/to/svcaccount.json'
 
 def GetIDTokenFromServiceAccount(svcAccountFile, target_audience):
   creds = service_account.IDTokenCredentials.from_service_account_file(
@@ -56,8 +56,8 @@ def MakeAuthenticatedRequest(id_token, url):
   creds = google.oauth2.credentials.Credentials(id_token)
   authed_session = AuthorizedSession(creds)
   r = authed_session.get(url)
-  print r.status_code
-  print r.text
+  print(r.status_code)
+  print(r.text)
 
 # For ServiceAccount
 token = GetIDTokenFromServiceAccount(svcAccountFile,target_audience)
@@ -65,8 +65,11 @@ token = GetIDTokenFromServiceAccount(svcAccountFile,target_audience)
 # For Compute Engine
 #token = GetIDTokenFromComputeEngine(target_audience)
 
-print 'Token: ' + token
+print('Token: ' + token)
 if VerifyIDToken(token=token,certs_url=certs_url, audience=target_audience):
-  print 'token Verified with aud: ' + target_audience
-print 'Making Authenticated API call:'
+  print('token Verified with aud: ' + target_audience)
+print('Making Authenticated API call:')
 MakeAuthenticatedRequest(token,url)
+
+# to verify ECDSA use certificate certs_url, not JWK
+# print(VerifyIDToken(token=token,certs_url='https://www.gstatic.com/iap/verify/public_key', audience="/projects/248066739582/apps/fabled-ray-104117"))

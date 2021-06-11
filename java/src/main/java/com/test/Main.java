@@ -18,10 +18,19 @@ package com.test;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+import com.auth0.jwk.Jwk;
+import com.auth0.jwk.JwkProvider;
+import com.auth0.jwk.UrlJwkProvider;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.SignatureVerificationException;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
@@ -30,41 +39,58 @@ import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.json.gson.GsonFactory;
 import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.ComputeEngineCredentials;
-import com.google.auth.oauth2.ImpersonatedCredentials;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.IdTokenCredentials;
 import com.google.auth.oauth2.IdTokenProvider;
+import com.google.auth.oauth2.ImpersonatedCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
-import com.google.auth.oauth2.GoogleCredentials;
 
-public class GoogleIDToken {
+public class Main {
 
-     private static final String CLOUD_PLATFORM_SCOPE =  "https://www.googleapis.com/auth/cloud-platform";
+     private static final String CLOUD_PLATFORM_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
      private static final String credFile = "/path/to/svc.json";
      private static final String target_audience = "https://foo.com";
 
      public static void main(String[] args) throws Exception {
 
-          GoogleIDToken tc = new GoogleIDToken();
+          Main tc = new Main();
 
           // IdTokenCredentials tok = tc.getIDTokenFromComputeEngine(target_audience);
 
           ServiceAccountCredentials sac = ServiceAccountCredentials.fromStream(new FileInputStream(credFile));
-          sac = (ServiceAccountCredentials)sac.createScoped(Arrays.asList(CLOUD_PLATFORM_SCOPE));
+          sac = (ServiceAccountCredentials) sac.createScoped(Arrays.asList(CLOUD_PLATFORM_SCOPE));
 
           IdTokenCredentials tok = tc.getIDTokenFromServiceAccount(sac, target_audience);
 
-          //String impersonatedServiceAccount = "impersonated-account@project.iam.gserviceaccount.com";
-          //IdTokenCredentials tok = tc.getIDTokenFromImpersonatedCredentials((GoogleCredentials)sac, impersonatedServiceAccount, target_audience);
+          // String impersonatedServiceAccount =
+          // "impersonated-account@project.iam.gserviceaccount.com";
+          // IdTokenCredentials tok =
+          // tc.getIDTokenFromImpersonatedCredentials((GoogleCredentials)sac,
+          // impersonatedServiceAccount, target_audience);
 
           System.out.println("Making Authenticated API call:");
-          String url = "https://foo.com";
+          String url = "https://httpbin.org/get";
           tc.MakeAuthenticatedRequest(tok, url);
 
+          // the following snippet verifies an id token.
+          // this step is done on the receiving end of the oidc endpoint
+          // adding this step in here as just as a demo on how to do this
+
           System.out.println("Verifying Token:");
-          System.out.println(TestApp.verifyToken(tok.getAccessToken().getTokenValue(), target_audience));
+          System.out.println(Main.verifyGoogleToken(tok.getAccessToken().getTokenValue(), target_audience));
+
+          // If you want to verify any other issuer, first get the JWK endpoint,
+          // in the following we are validating google's tokens, meaning its equivalent to
+          // the bit above
+          // this is added in as an example of verifying IAP or other token types
+
+          System.out.println("Verifying Token:");
+          String jwkUrl = "https://www.googleapis.com/oauth2/v3/certs";
+          System.out.println(Main.verifyToken(tok.getAccessToken().getTokenValue(), target_audience, jwkUrl));
+
      }
 
      public IdTokenCredentials getIDTokenFromServiceAccount(ServiceAccountCredentials saCreds, String targetAudience) {
@@ -92,9 +118,9 @@ public class GoogleIDToken {
           return tokenCredential;
      }
 
-     public static boolean verifyToken(String id_token, String audience) throws Exception {
-          JacksonFactory jacksonFactory = new JacksonFactory();
-          GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), jacksonFactory)
+     public static boolean verifyGoogleToken(String id_token, String audience) throws Exception {
+          GsonFactory jsonFactory = new GsonFactory();
+          GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), jsonFactory)
                     .setAudience(Collections.singletonList(audience)).build();
           GoogleIdToken idToken = verifier.verify(id_token);
           if (idToken != null) {
@@ -103,6 +129,30 @@ public class GoogleIDToken {
           } else {
                return false;
           }
+     }
+
+     public static boolean verifyToken(String id_token, String audience, String jwkUrl) throws Exception {
+
+          DecodedJWT jwt = JWT.decode(id_token);
+          if (jwt.getExpiresAt().before(Calendar.getInstance().getTime())) {
+               System.out.println("Expired token");
+               return false;
+          }
+          JwkProvider provider = new UrlJwkProvider(new java.net.URL(jwkUrl));
+          Jwk jwk = provider.get(jwt.getKeyId());
+          Algorithm algorithm = Algorithm.RSA256((RSAPublicKey) jwk.getPublicKey(), null);
+          //Algorithm algorithm = Algorithm.ECDSA256((ECPublicKey) jwk.getPublicKey(),null);
+
+          JWTVerifier verifier = JWT.require(algorithm).withAudience(audience).build();
+
+          try {
+               jwt = verifier.verify(id_token);
+          } catch (SignatureVerificationException se) {
+               System.out.println("Could not verify Signature: " + se.getMessage());
+               return false;
+          }
+          return true;
+
      }
 
      public void MakeAuthenticatedRequest(IdTokenCredentials id_token, String url) throws IOException {

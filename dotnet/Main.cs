@@ -45,9 +45,25 @@ namespace Program
             }
             OidcToken oidcToken = await saCredential.GetOidcTokenAsync(OidcTokenOptions.FromTargetAudience(targetAudience).WithTokenFormat(OidcTokenFormat.Standard)).ConfigureAwait(false);            
             string token = await oidcToken.GetAccessTokenAsync().ConfigureAwait(false);
-            using (var httpClient = new HttpClient())
+
+            // the following snippet verifies an id token. 
+            // this step is done on the  receiving end of the oidc endpoint 
+            // adding this step in here as just as a demo on how to do this
+            //var options = SignedTokenVerificationOptions.Default;
+            SignedTokenVerificationOptions options = new SignedTokenVerificationOptions
             {
-               
+                IssuedAtClockTolerance = TimeSpan.FromMinutes(1),
+                ExpiryClockTolerance = TimeSpan.FromMinutes(1),
+                TrustedAudiences = { targetAudience },
+                CertificatesUrl = "https://www.googleapis.com/oauth2/v3/certs"  // default value
+            };
+            var payload = await JsonWebSignature.VerifySignedTokenAsync(token, options);
+            Console.WriteLine("Verified with audience " + payload.Audience);
+            // end verification
+
+            // use the token
+            using (var httpClient = new HttpClient())
+            {               
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
                 string response = await httpClient.GetStringAsync(uri).ConfigureAwait(false);
                 Console.WriteLine(response);

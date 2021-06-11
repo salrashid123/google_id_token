@@ -8,8 +8,8 @@
   <packaging>jar</packaging>
   <version>1.0-SNAPSHOT</version>
 
-  <groupId>com.test.GoogleIDToken</groupId>
-  <artifactId>GoogleIDToken</artifactId>
+  <groupId>com.test.Main</groupId>
+  <artifactId>Main</artifactId>
 
   <properties>
   </properties>
@@ -19,14 +19,29 @@
     <dependency>
       <groupId>com.google.auth</groupId>
       <artifactId>google-auth-library-oauth2-http</artifactId>
-      <version>0.17.0</version>
+      <version>0.26.0</version>
     </dependency>
 
     <dependency>
         <groupId>com.google.api-client</groupId>
         <artifactId>google-api-client</artifactId>
-        <version>1.30.2</version>
+        <version>1.31.5</version>
     </dependency>
+
+
+    <dependency>
+      <groupId>com.auth0</groupId>
+      <artifactId>java-jwt</artifactId>
+      <version>3.16.0</version>
+    </dependency>
+
+  <dependency>
+    <groupId>com.auth0</groupId>
+    <artifactId>jwks-rsa</artifactId>
+    <version>0.18.0</version>
+  </dependency>
+
+
 
   </dependencies>
 
@@ -53,7 +68,7 @@
           </execution>
         </executions>
         <configuration>
-          <mainClass>com.test.GoogleIDToken</mainClass>
+          <mainClass>com.test.Main</mainClass>
         </configuration>
       </plugin>
     </plugins>
