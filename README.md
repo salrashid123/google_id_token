@@ -169,26 +169,23 @@ Each while using
 
 ### python
 
-- [python/googleidtokens.py](python/googleidtokens.py)
+- [python/main.py](python/main.py)
 
 ### java
 
-- [java/GoogleIDToken.java](java/GoogleIDToken.java)
+- [java/Main.java](java/Main.java)
 
 ### go
 
-- [golang/GoogleIDToken.go](golang/GoogleIDToken.go)
-- update `5/10/20` [google.golang.org/api/idtoken](https://pkg.go.dev/google.golang.org/api@v0.23.0/idtoken?tab=doc)
-- original implementation: ([github.com/salrashid123/oauth2/google](https://github.com/salrashid123/oauth2)
+- [golang/main.go](golang/main.go)
 
 ### nodejs
 
-- [nodejs/GoogleIdToken.js](nodejs/GoogleIDToken.js)
-  Support added in [PR#867](https://github.com/googleapis/google-auth-library-nodejs/pull/867)
+- [nodejs/main.js](nodejs/main.js)
 
 ### dotnet
 
-- [dotnet/ServiceAuth.cs](dotnet/ServiceAuth.cs)
+- [dotnet/Main.cs](dotnet/Main.cs)
 
 ## How to verify an ID Token?
 
