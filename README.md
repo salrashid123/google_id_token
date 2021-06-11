@@ -173,7 +173,7 @@ Each while using
 
 ### java
 
-- [java/src/main/java/com/test/Main.java](jjava/src/main/java/com/test/Main.java)
+- [java/src/main/java/com/test/Main.java](java/src/main/java/com/test/Main.java)
 
 ### go
 
