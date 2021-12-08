@@ -97,6 +97,10 @@ eg.
 curl -v -H "Authorization: Bearer id_token" https://some-cloud-run-uc.a.run.app
 ```
 
+### Workload Identity Federation
+
+See [Getting GCP IDTokens using Workload Identity Federation](https://github.com/salrashid123/gcp_impersonated_credentials/tree/main/id_token)
+
 ## Services Accepting OIDC tokens for authentication
 
 The following platforms use Google OIDC tokens for access controls. If you deploy an application behind any of of these services, you can optionally enable IAM access controls. What that will do is require any inbound access to a service to provide a valid Google OIDC token.
