@@ -1,14 +1,11 @@
 #include <iostream>
+
 #include <jwt-cpp/jwt.h>
 #include <curl/curl.h>
 
 /*
 
-Extract public/private keyapir from service account p12 file
-    openssl pkcs12 -in svc_account.p12  -nocerts -nodes -passin pass:notasecret | openssl rsa -out private.pem
-    openssl rsa -in private.pem -outform PEM -pubout -out public.pem
-    
-apt-get install libcurl4-openssl-dev libssl-dev
+apt-get install libssl-dev 
 
 git clone https://github.com/Thalhammer/jwt-cpp.git
 cd jwt-cpp/cmake
@@ -25,18 +22,21 @@ $ ./main
 
 */
 
+using namespace std;
+
 static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
 {
     ((std::string*)userp)->append((char*)contents, size * nmemb);
     return size * nmemb;
 }
 
+
 int main() {
 	std::string rsa_priv_key = R"(-----BEGIN RSA PRIVATE KEY-----
-MIIttgIEPdKpyQLpR....
+MIIEowIBAAKCAQEAz3/...
 -----END RSA PRIVATE KEY-----)";
 
-    auto issuer = "yubikey-svc@foo.iam.gserviceaccount.com";
+    auto issuer = "yubikey-svc@projectid.iam.gserviceaccount.com";
     auto audience = "https://oauth2.googleapis.com/token";
     auto target_audience = "https://foo.bar";
 
@@ -74,7 +74,13 @@ MIIttgIEPdKpyQLpR....
         }
         else
         {
-          std::cout << readBuffer << std::endl;          
+          //std::cout << readBuffer << std::endl;   
+          picojson::value v;
+          std::string err = picojson::parse(v, readBuffer);
+          if (! err.empty()) {
+             std:cerr << err << std::endl;
+          }
+          cout <<  v.get("id_token").get<string>().c_str() << endl;   
         }
 
         curl_easy_cleanup(curl);
