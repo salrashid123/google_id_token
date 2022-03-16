@@ -93,23 +93,25 @@ int main(int argc, char *argv[])
         {
             cerr << err << std::endl;
         }
-        std::string issuer = v.get("client_email").get<string>();
-        std::string audience = "https://oauth2.googleapis.com/token";
-        std::string rsa_priv_key = v.get("private_key").get<string>();
+        std::string type = v.get("type").get<string>();
 
-        auto token = jwt::create()
-                         .set_issuer(issuer)
-                         .set_type("JWT")
-                         .set_issued_at(std::chrono::system_clock::now())
-                         .set_audience(audience)
-                         .set_expires_at(std::chrono::system_clock::now() + std::chrono::seconds{100})
-                         .set_payload_claim("target_audience", jwt::claim(std::string{target_audience}))
-                         .sign(jwt::algorithm::rs256("", rsa_priv_key, "", "notasecret"));
-
-        std::string postData = "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=" + token;
-
-        if (curl)
+        if (type == "service_account")
         {
+            std::string issuer = v.get("client_email").get<string>();
+            std::string audience = "https://oauth2.googleapis.com/token";
+            std::string rsa_priv_key = v.get("private_key").get<string>();
+
+            auto token = jwt::create()
+                             .set_issuer(issuer)
+                             .set_type("JWT")
+                             .set_issued_at(std::chrono::system_clock::now())
+                             .set_audience(audience)
+                             .set_expires_at(std::chrono::system_clock::now() + std::chrono::seconds{100})
+                             .set_payload_claim("target_audience", jwt::claim(std::string{target_audience}))
+                             .sign(jwt::algorithm::rs256("", rsa_priv_key, "", "notasecret"));
+
+            std::string postData = "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=" + token;
+
             curl_easy_setopt(curl, CURLOPT_URL, "https://oauth2.googleapis.com/token");
             curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
             curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
@@ -137,6 +139,15 @@ int main(int argc, char *argv[])
             }
 
             curl_easy_cleanup(curl);
+        }
+        else if (type == "external_account")
+        {
+            cerr << "external_account not supported" << std::endl;
+            // ref https://blog.salrashid.dev/articles/2022/workload_federation_cloudrun_gcf/
+        }
+        else
+        {
+            cerr << "Unknown credential file type  " << type << std::endl;
         }
     }
     else
