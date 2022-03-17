@@ -41,7 +41,7 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
     return size * nmemb;
 }
 
-bool verifyIdToken(std::string token)
+bool verifyIdToken(std::string token, std::string audience)
 {
     CURL *curl;
     CURLcode res;
@@ -116,6 +116,7 @@ bool verifyIdToken(std::string token)
                     jwt::verify()
                         .allow_algorithm(jwt::algorithm::rs256(e.second.get<string>(), "", "", ""))
                         .with_issuer("https://accounts.google.com")
+                        .with_audience(audience)
                         .leeway(60UL); // value in seconds, add some to compensate timeout
                 std::error_code ec;
                 verifier.verify(decoded_jwt, ec);
@@ -126,6 +127,7 @@ bool verifyIdToken(std::string token)
                 else
                 {
                    std::cout << "id_token verification Failed " << ec.message() << endl;
+                   return false;
                 }                
             }
         }
@@ -232,7 +234,7 @@ int main(int argc, char *argv[])
                 }
                 cout << v.get("id_token").get<string>().c_str() << endl;
 
-                //verifyIdToken( v.get("id_token").get<string>());
+                //verifyIdToken( v.get("id_token").get<string>(), audience);
             }
         }
         else if (type == "external_account")
@@ -268,7 +270,7 @@ int main(int argc, char *argv[])
         else
         {
             cout << readBuffer << endl;
-            //verifyIdToken(readBuffer);
+            //verifyIdToken(readBuffer, target_audience);
         }
 
         curl_easy_cleanup(curl);
