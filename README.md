@@ -14,6 +14,7 @@
   * [go](#go)
   * [nodejs](#nodejs)
   * [dotnet](#dotnet)
+  * [cc](#cc)  
 * [How to verify an ID Token?](#how-to-verify-an-id-token)
   * [JWK Endpoints](#jwk-endpoints)
 * [References](#references)
@@ -190,6 +191,13 @@ Each while using
 ### dotnet
 
 - [dotnet/Main.cs](dotnet/Main.cs)
+
+### cc
+
+See [google-cloud-cpp#2786](https://github.com/googleapis/google-cloud-cpp/issues/2786)
+
+- [cc/google_oidc.c](cc/google_oidc.c)
+
 
 ## How to verify an ID Token?
 

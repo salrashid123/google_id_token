@@ -8,8 +8,9 @@
 
 /*
 
-Generates google id_token on GCE instance or with GCP service account json file
+Generates and verifies google id_token on GCE instance or with GCP service account json file
 
+// https://github.com/salrashid123/google_id_token
 
 apt-get install libcurl4-openssl-dev libssl-dev
 
@@ -21,10 +22,10 @@ cmake ../../
 make
 
 
-g++ -std=c++11 -I. -Ijwt-cpp/include -o main -lcrypto -lcurl main.cc
+g++ -std=c++11 -I. -Ijwt-cpp/include -o main -lcrypto -lcurl google_oidc.c
 
 with env or on gce
-export GOOGLE_APPLICATION_CREDENTIALS=`pwd`/svc_account.json 
+export GOOGLE_APPLICATION_CREDENTIALS=`pwd`/svc_account.json
 ./main https://foo.bar
    eyJhbGciOiJSUzI1NiIsImtpZ
 
@@ -41,97 +42,68 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
     return size * nmemb;
 }
 
-bool verifyIdToken(std::string token, std::string audience)
+bool verifyIdToken(std::string token, std::string audience, std::string certsReadBuffer)
 {
-    CURL *curl;
-    CURLcode res;
-    std::string readBuffer;
-    stringstream ss;
+
+    auto decoded_jwt = jwt::decode(token);
     picojson::value v;
 
-    curl = curl_easy_init();
-
-    // you can cache the certs here.
-    //  this function downloads the public certs everytime which you
-    //  certainly don't need to do.
-
-    // google's jwk does not have an x5c claim so we can't use
-    //  "https://www.googleapis.com/oauth2/v3/certs";
-    //  we have to use the PEM, not JWK
-    //std::string url = "https://www.googleapis.com/oauth2/v3/certs";
-    std::string url = "https://www.googleapis.com/oauth2/v1/certs";
-    std::string certsReadBuffer;
-    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &certsReadBuffer);
-    res = curl_easy_perform(curl);
-
-    if (res != CURLE_OK)
+    std::string err = picojson::parse(v, certsReadBuffer);
+    if (!err.empty())
     {
-        std::cout << (stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-        return false;
+        cerr << err << std::endl;
     }
-    else
+    picojson::object obj = v.get<picojson::object>();
+
+    // again, we can't use this JWK format of the endpoint
+    // since the library i used here for JWK persing looks
+    // for the x5c value (which doens't exist)  jwk.get_x5c_key_value();
+
+    // auto jwks = jwt::parse_jwks(certsReadBuffer);
+    // auto jwk = jwks.get_jwk(decoded_jwt.get_key_id());
+    // auto issuer = decoded_jwt.get_issuer();
+    //   jwk does not have an x5c claim so we can't do this stuff here:
+
+    // auto x5c = jwk.get_x5c_key_value();
+    // if (!x5c.empty() && !issuer.empty())
+    // {
+    //     auto verifier =
+    //         jwt::verify()
+    //             .allow_algorithm(jwt::algorithm::rs256(jwt::helper::convert_base64_der_to_pem(x5c), "", "", ""))
+    //             .with_issuer("https://accounts.google.com")
+    //             .leeway(60UL); // value in seconds, add some to compensate timeout
+
+    //     verifier.verify(decoded_jwt);
+    // }
+
+    // so instead, we're using the PEM format endpoint "https://www.googleapis.com/oauth2/v1/certs";
+    // parse that and try to verify using the provided key_id
+
+    for (const auto e : obj)
     {
-        auto decoded_jwt = jwt::decode(token);
-
-        // again, we can't use this format since it only looks to get an rsa key decoded
-        // from the x5c value (which doens't exist)  jwk.get_x5c_key_value();
-
-        //auto jwks = jwt::parse_jwks(certsReadBuffer);
-        //auto jwk = jwks.get_jwk(decoded_jwt.get_key_id());
-        //auto issuer = decoded_jwt.get_issuer();
-        //  jwk does not have an x5c claim so we can't do this stuff here:
-
-        // auto x5c = jwk.get_x5c_key_value();
-        // if (!x5c.empty() && !issuer.empty())
-        // {
-        //     auto verifier =
-        //         jwt::verify()
-        //             .allow_algorithm(jwt::algorithm::rs256(jwt::helper::convert_base64_der_to_pem(x5c), "", "", ""))
-        //             .with_issuer("https://accounts.google.com")
-        //             .leeway(60UL); // value in seconds, add some to compensate timeout
-
-        //     verifier.verify(decoded_jwt);
-        // }
-
-        // so instead, we downloaded the PEM format endpoint "https://www.googleapis.com/oauth2/v1/certs";
-        // parse that and try to verify using the provided key_id
-        // todo:  if the key_id isn't provided, then iterate over all keys
-        //    i'm just taking the lazy way out
-
-        ss << certsReadBuffer << endl;
-        std::string err = picojson::parse(v, ss);
-        if (!err.empty())
+        // todo:  if the key_id isn't provided, then iterate over all keys and see
+        //  if there's a match.  for now, i'm just expecting one to be there in the headers
+        //  (which will be the case for google issued tokens)
+        if (e.first == decoded_jwt.get_key_id())
         {
-            cerr << err << std::endl;
-        }
-        picojson::object obj = v.get<picojson::object>();
-        for (const auto e : obj)
-        {
-            if (e.first == decoded_jwt.get_key_id())
+            auto verifier =
+                jwt::verify()
+                    .allow_algorithm(jwt::algorithm::rs256(e.second.get<string>(), "", "", ""))
+                    .with_issuer("https://accounts.google.com")
+                    .with_audience(audience)
+                    .leeway(60UL); // value in seconds, add some to compensate timeout
+            std::error_code ec;
+            verifier.verify(decoded_jwt, ec);
+            if (!ec)
             {
-                auto verifier =
-                    jwt::verify()
-                        .allow_algorithm(jwt::algorithm::rs256(e.second.get<string>(), "", "", ""))
-                        .with_issuer("https://accounts.google.com")
-                        .with_audience(audience)
-                        .leeway(60UL); // value in seconds, add some to compensate timeout
-                std::error_code ec;
-                verifier.verify(decoded_jwt, ec);
-                if (!ec)
-                {
-                    std::cout << "id_token verified" << endl;
-                }
-                else
-                {
-                   std::cout << "id_token verification Failed " << ec.message() << endl;
-                   return false;
-                }                
+                std::cout << "id_token verified" << endl;
+            }
+            else
+            {
+                std::cout << "id_token verification Failed " << ec.message() << endl;
+                return false;
             }
         }
-        curl_easy_cleanup(curl);
     }
     return true;
 }
@@ -167,9 +139,30 @@ int main(int argc, char *argv[])
         }
     }
 
+    // download and cache the certs here if you want to
+    // test the verification step.
+    // google's jwk does not have an x5c claim so we can't use JWK endpoint
+    // std::string url = "https://www.googleapis.com/oauth2/v3/certs";
+
+    //  we have to instead use the PEM version here
+    std::string url = "https://www.googleapis.com/oauth2/v1/certs";
+    std::string certsReadBuffer;
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &certsReadBuffer);
+    res = curl_easy_perform(curl);
+
+    if (res != CURLE_OK)
+    {
+        std::cout << (stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+        return -1;
+    }
+
+    // now generate the id_token
     if (!adc_file.empty())
     {
-        //std::cout << "Using ADC File: " << adc_file << std::endl;
+        // std::cout << "Using ADC File: " << adc_file << std::endl;
 
         std::ifstream adc_json;
         adc_json.open(adc_file);
@@ -177,7 +170,7 @@ int main(int argc, char *argv[])
         {
             cerr << "Error opening ADC file: " << strerror(errno);
         }
-        //std::cout << adc_json.rdbuf();
+        // std::cout << adc_json.rdbuf();
         stringstream ss;
         ss << adc_json.rdbuf();
 
@@ -223,7 +216,7 @@ int main(int argc, char *argv[])
             }
             else
             {
-                //std::cout << readBuffer << std::endl;
+                // std::cout << readBuffer << std::endl;
                 picojson::value v;
 
                 std::string err = picojson::parse(v, readBuffer);
@@ -234,8 +227,9 @@ int main(int argc, char *argv[])
                 }
                 cout << v.get("id_token").get<string>().c_str() << endl;
 
-                //verifyIdToken( v.get("id_token").get<string>(), audience);
+                verifyIdToken(v.get("id_token").get<string>(), audience, certsReadBuffer);
             }
+            curl_easy_cleanup(curl);
         }
         else if (type == "external_account")
         {
@@ -249,7 +243,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        //std::cout << "Using Metadata Server" << std::endl;
+        // std::cout << "Using Metadata Server" << std::endl;
         std::string url = "http://metadata/computeMetadata/v1/instance/service-accounts/default/identity?audience=" + target_audience + "&format=full";
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
         curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
@@ -270,9 +264,8 @@ int main(int argc, char *argv[])
         else
         {
             cout << readBuffer << endl;
-            //verifyIdToken(readBuffer, target_audience);
+            verifyIdToken(readBuffer, target_audience, certsReadBuffer);
         }
-
         curl_easy_cleanup(curl);
     }
 }
