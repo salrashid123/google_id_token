@@ -115,9 +115,6 @@ Furthermore, the token must have its aud: field set to the service name being in
 
 You can also deploy your own service outside of these services and verifying an OpenID Connect token. In this mode, your application that receives an OIDC token will need to manually verify its validity and audience field. You can use application frameworks like to do this like Spring Security, proxies like Envoy or even higher level Services like Istio.
 
-For detailed implementation, see:
-- [Automatic OIDC: Using Cloud Scheduler, Tasks, and PubSub to make authenticated calls to Cloud Run, Cloud Functions or your Server](https://medium.com/google-cloud/automatic-oidc-using-cloud-scheduler-tasks-and-pubsub-to-make-authenticated-calls-to-cloud-run-de9e7e9cec3f)
-
 ## Services that include OIDC tokens in webhooks
 
 Other services also support automatically including an OIDC token along with a webhook request
@@ -135,7 +132,7 @@ See:
 * [Cloud Tasks OIDC](https://cloud.google.com/tasks/docs/reference/rpc/google.cloud.tasks.v2beta3#oidctoken)
 
 For detailed implementation, see:
-- [Automatic oauth2: Using Cloud Scheduler and Tasks to call Google APIs](https://medium.com/google-cloud/automatic-oauth2-using-cloud-scheduler-and-tasks-to-call-google-apis-55f0a8905baf)
+- [Automatic OIDC: Using Cloud Scheduler, Tasks, and PubSub to make authenticated calls to Cloud Run, Cloud Functions or your Server](https://blog.salrashid.dev/articles/2019/automatic_gcp_oidc/)
 
 
 ## How to get an ID Token
