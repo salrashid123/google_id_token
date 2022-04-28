@@ -41,9 +41,12 @@ def GetIDTokenFromServiceAccount(svcAccountFile, target_audience):
 
 def GetIDTokenFromComputeEngine(target_audience):
   request = google.auth.transport.requests.Request()
-  creds = compute_engine.IDTokenCredentials(request=request, target_audience=target_audience, use_metadata_identity_endpoint=True)
-  creds.refresh(request)
-  return creds.token
+  #creds = compute_engine.IDTokenCredentials(request=request, target_audience=target_audience, use_metadata_identity_endpoint=True)
+  #creds.refresh(request)
+  #return creds.token
+
+  token = id_token.fetch_id_token(request, target_audience)
+  return token
 
 def VerifyIDToken(token, certs_url,  audience=None):
    request = google.auth.transport.requests.Request()
@@ -60,10 +63,10 @@ def MakeAuthenticatedRequest(id_token, url):
   print(r.text)
 
 # For ServiceAccount
-token = GetIDTokenFromServiceAccount(svcAccountFile,target_audience)
+#token = GetIDTokenFromServiceAccount(svcAccountFile,target_audience)
 
-# For Compute Engine
-#token = GetIDTokenFromComputeEngine(target_audience)
+# For Compute Engine, Cloud Run, GCF
+token = GetIDTokenFromComputeEngine(target_audience)
 
 print('Token: ' + token)
 if VerifyIDToken(token=token,certs_url=certs_url, audience=target_audience):
