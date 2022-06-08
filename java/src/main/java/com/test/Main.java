@@ -23,6 +23,8 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 
+import javax.swing.text.DefaultCaret;
+
 import com.auth0.jwk.Jwk;
 import com.auth0.jwk.JwkProvider;
 import com.auth0.jwk.UrlJwkProvider;
@@ -58,12 +60,12 @@ public class Main {
 
           Main tc = new Main();
 
-          // IdTokenCredentials tok = tc.getIDTokenFromComputeEngine(target_audience);
+          IdTokenCredentials tok = tc.getIDTokenFromComputeEngine(target_audience);
 
-          ServiceAccountCredentials sac = ServiceAccountCredentials.fromStream(new FileInputStream(credFile));
-          sac = (ServiceAccountCredentials) sac.createScoped(Arrays.asList(CLOUD_PLATFORM_SCOPE));
+          // ServiceAccountCredentials sac = ServiceAccountCredentials.fromStream(new FileInputStream(credFile));
+          // sac = (ServiceAccountCredentials) sac.createScoped(Arrays.asList(CLOUD_PLATFORM_SCOPE));
 
-          IdTokenCredentials tok = tc.getIDTokenFromServiceAccount(sac, target_audience);
+          // IdTokenCredentials tok = tc.getIDTokenFromServiceAccount(sac, target_audience);
 
           // String impersonatedServiceAccount =
           // "impersonated-account@project.iam.gserviceaccount.com";
@@ -99,9 +101,16 @@ public class Main {
           return tokenCredential;
      }
 
-     public IdTokenCredentials getIDTokenFromComputeEngine(String targetAudience) {
-          ComputeEngineCredentials caCreds = ComputeEngineCredentials.create();
-          IdTokenCredentials tokenCredential = IdTokenCredentials.newBuilder().setIdTokenProvider(caCreds)
+     public IdTokenCredentials getIDTokenFromComputeEngine(String targetAudience) throws IOException {
+
+          // ComputeEngineCredentials caCreds = ComputeEngineCredentials.create();
+          // IdTokenCredentials tokenCredential = IdTokenCredentials.newBuilder().setIdTokenProvider(caCreds)
+          //           .setTargetAudience(targetAudience)
+          //           .setOptions(Arrays.asList(IdTokenProvider.Option.FORMAT_FULL, IdTokenProvider.Option.LICENSES_TRUE))
+          //           .build();
+
+          GoogleCredentials caCreds = GoogleCredentials.getApplicationDefault();
+          IdTokenCredentials tokenCredential = IdTokenCredentials.newBuilder().setIdTokenProvider((IdTokenProvider)caCreds)
                     .setTargetAudience(targetAudience)
                     .setOptions(Arrays.asList(IdTokenProvider.Option.FORMAT_FULL, IdTokenProvider.Option.LICENSES_TRUE))
                     .build();
