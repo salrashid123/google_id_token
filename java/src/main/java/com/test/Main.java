@@ -60,18 +60,20 @@ public class Main {
 
           Main tc = new Main();
 
-          IdTokenCredentials tok = tc.getIDTokenFromComputeEngine(target_audience);
+          // FOR ADC on GCE/Cloud Run/GCF
+          // default service account must have roles/iam.serviceAccountTokenCreator on itself
+          //IdTokenCredentials tok = tc.getIDTokenFromComputeEngine(target_audience);
 
+          // FOR service account file;  no IAM permissions are required
           // ServiceAccountCredentials sac = ServiceAccountCredentials.fromStream(new FileInputStream(credFile));
           // sac = (ServiceAccountCredentials) sac.createScoped(Arrays.asList(CLOUD_PLATFORM_SCOPE));
-
           // IdTokenCredentials tok = tc.getIDTokenFromServiceAccount(sac, target_audience);
 
-          // String impersonatedServiceAccount =
-          // "impersonated-account@project.iam.gserviceaccount.com";
-          // IdTokenCredentials tok =
-          // tc.getIDTokenFromImpersonatedCredentials((GoogleCredentials)sac,
-          // impersonatedServiceAccount, target_audience);
+          // FOR ADC local
+          // ADC account must have roles/iam.serviceAccountTokenCreator permission on target-serviceaccount@
+          GoogleCredentials gc = GoogleCredentials.getApplicationDefault();
+          String impersonatedServiceAccount =  "target-serviceaccount@YOUR_PROJECT.iam.gserviceaccount.com";
+          IdTokenCredentials tok = tc.getIDTokenFromImpersonatedCredentials(gc,impersonatedServiceAccount, target_audience);
 
           System.out.println("Making Authenticated API call:");
           String url = "https://httpbin.org/get";

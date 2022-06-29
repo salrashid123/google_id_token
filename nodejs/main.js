@@ -77,11 +77,18 @@ async function verifyIDToken(token, issuer, audience, jwkURL) {
 }
 
 async function main() {
-  
- // const auth = new GoogleAuth();
-  const auth = new GoogleAuth({
-    keyFile: '/path/to/svc.json',
-  });
+
+  // FOR ADC, using impersonation
+  // not implemented
+  //  see https://github.com/googleapis/google-auth-library-nodejs/issues/1318
+
+  // FOR ADC on GCE|GCF|Cloud Run
+  const auth = new GoogleAuth();
+
+  // For ServiceAccount Key file
+  // const auth = new GoogleAuth({
+  //   keyFile: '/path/to/svc.json',
+  // });
 
   const client = await auth.getIdTokenClient(
     audience

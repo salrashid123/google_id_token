@@ -9,6 +9,10 @@ using Google.Apis.Auth.OAuth2;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using Google.Apis.Logging;
+
+
+using Google.Cloud.Iam.Credentials.V1;
+
 namespace Program
 {
     public class Program
@@ -37,14 +41,36 @@ namespace Program
 
         public async Task<string> Run(string targetAudience, string credentialsFilePath, string uri)
         {
-            ServiceAccountCredential saCredential;
+            
 
-            using (var fs = new FileStream(credentialsFilePath, FileMode.Open, FileAccess.Read))
+            // for ADC on Cloud Run| GCF| GCE
+            // both ComputeCredential and GoogleCredentials works and requires "self impersonation"
+            // ComputeCredential c = new ComputeCredential();
+            // GoogleCredential c = await GoogleCredential.GetApplicationDefaultAsync();
+            // OidcToken oidcToken = await c.GetOidcTokenAsync(OidcTokenOptions.FromTargetAudience(targetAudience).WithTokenFormat(OidcTokenFormat.Standard)).ConfigureAwait(false);
+            // string token = await oidcToken.GetAccessTokenAsync().ConfigureAwait(false);
+
+            // for ADC local, requires impersonation
+            string targetPrincipal = "target-serviceaccount@YOUR_PROJECT.iam.gserviceaccount.com";
+            GoogleCredential sourceCredential = await GoogleCredential.GetApplicationDefaultAsync();
+            IAMCredentialsClient client = IAMCredentialsClient.Create();
+            GenerateIdTokenResponse resp = client.GenerateIdToken(new GenerateIdTokenRequest()
             {
-                saCredential = ServiceAccountCredential.FromServiceAccountData(fs);
-            }
-            OidcToken oidcToken = await saCredential.GetOidcTokenAsync(OidcTokenOptions.FromTargetAudience(targetAudience).WithTokenFormat(OidcTokenFormat.Standard)).ConfigureAwait(false);            
-            string token = await oidcToken.GetAccessTokenAsync().ConfigureAwait(false);
+                Name = "projects/-/serviceAccounts/" + targetPrincipal,
+                Audience = targetAudience,
+                IncludeEmail = true
+            });
+            string token = resp.Token;
+
+            // // for service accounts
+            // ServiceAccountCredential c;
+            // using (var fs = new FileStream(credentialsFilePath, FileMode.Open, FileAccess.Read))
+            // {
+            //     c = ServiceAccountCredential.FromServiceAccountData(fs);
+            // }
+
+            //OidcToken oidcToken = await c.GetOidcTokenAsync(OidcTokenOptions.FromTargetAudience(targetAudience).WithTokenFormat(OidcTokenFormat.Standard)).ConfigureAwait(false);            
+            //string token = await oidcToken.GetAccessTokenAsync().ConfigureAwait(false);
 
             // the following snippet verifies an id token. 
             // this step is done on the  receiving end of the oidc endpoint 

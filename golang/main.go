@@ -8,9 +8,11 @@ import (
 	"net/http"
 
 	jwt "github.com/golang-jwt/jwt"
+	"golang.org/x/oauth2"
 
 	"github.com/lestrrat/go-jwx/jwk"
 	"google.golang.org/api/idtoken"
+	"google.golang.org/api/impersonate"
 )
 
 const ()
@@ -25,15 +27,28 @@ func main() {
 
 	aud := "https://your.endpoint.run.url"
 	url := "https://httpbin.org/get"
-	jsonCert := "/path/to/svcaccount.json"
+	//jsonCert := "/path/to/svcaccount.json"
 
 	ctx := context.Background()
 
-	// With TokenSource
-	// With ADC
+	// ADC local.
+	// ADC account must have roles/iam.serviceAccountTokenCreator permission on target-serviceaccount@
+	targetServiceAccount := "target-serviceaccount@YOUR_PROJECT.iam.gserviceaccount.com"
+	ts, err := impersonate.IDTokenSource(ctx,
+		impersonate.IDTokenConfig{
+			TargetPrincipal: targetServiceAccount,
+			Audience:        aud,
+			IncludeEmail:    true,
+		},
+	)
+
+	//
+	// For ADC on GCE/Cloud Run/GCF
+	// default service account must have roles/iam.serviceAccountTokenCreator on itself
 	//ts, err := idtoken.NewTokenSource(ctx, aud)
-	// With ServiceAccount
-	ts, err := idtoken.NewTokenSource(ctx, aud, idtoken.WithCredentialsFile(jsonCert))
+
+	// With ServiceAccount key
+	//ts, err := idtoken.NewTokenSource(ctx, aud, idtoken.WithCredentialsFile(jsonCert))
 	if err != nil {
 		log.Fatalf("unable to create TokenSource: %v", err)
 	}
@@ -64,13 +79,16 @@ func main() {
 		log.Fatal("Unable to load JWK Set: ", err)
 	}
 	doc, err := verifyGoogleIDToken(ctx, tok.AccessToken)
-
+	if err != nil {
+		log.Fatalf("Unable to verify IDTOKEN: %v", err)
+	}
 	log.Printf("Verified Token: %v", doc)
 	// End verification
 
-	// With Authorized Client
-	client, err := idtoken.NewClient(ctx, aud, idtoken.WithCredentialsFile(jsonCert))
+	// With Authorized Client service account key
+	//client, err := idtoken.NewClient(ctx, aud, idtoken.WithCredentialsFile(jsonCert))
 
+	client := oauth2.NewClient(ctx, ts)
 	if err != nil {
 		log.Fatalf("Could not generate NewClient: %v", err)
 	}

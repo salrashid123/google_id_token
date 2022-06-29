@@ -16,6 +16,7 @@
 import google.oauth2.credentials
 from google.oauth2 import id_token
 from google.oauth2 import service_account
+from google.auth import impersonated_credentials
 import google.auth
 import google.auth.transport.requests
 from google.auth.transport.requests import AuthorizedSession
@@ -48,6 +49,24 @@ def GetIDTokenFromComputeEngine(target_audience):
   token = id_token.fetch_id_token(request, target_audience)
   return token
 
+# FOR ADC local
+# ADC account must have roles/iam.serviceAccountTokenCreator permission on target_principal
+def GetIDTokenFromADC(target_prinicpal, target_audience):
+  credentials, project_id = google.auth.default()
+  target_scopes = ['https://www.googleapis.com/auth/cloud-platform']
+  target_credentials = impersonated_credentials.Credentials(
+      source_credentials = credentials,
+      target_principal = target_principal,
+      target_scopes = target_scopes,
+      delegates=[],
+      lifetime=5)
+
+  id_creds = impersonated_credentials.IDTokenCredentials(target_credentials, target_audience=target_audience, include_email=True)
+  request = google.auth.transport.requests.Request()
+  id_creds.refresh(request)
+  token = id_creds.token
+  return token
+
 def VerifyIDToken(token, certs_url,  audience=None):
    request = google.auth.transport.requests.Request()
    result = id_token.verify_token(token,request,certs_url=certs_url)
@@ -65,8 +84,12 @@ def MakeAuthenticatedRequest(id_token, url):
 # For ServiceAccount
 #token = GetIDTokenFromServiceAccount(svcAccountFile,target_audience)
 
-# For Compute Engine, Cloud Run, GCF
-token = GetIDTokenFromComputeEngine(target_audience)
+# For ADC on Compute Engine, Cloud Run, GCF
+#token = GetIDTokenFromComputeEngine(target_audience)
+
+# For ADC local
+target_principal = 'target-serviceaccount@YOUR_PROJECT.iam.gserviceaccount.com'
+token = GetIDTokenFromADC(target_principal,target_audience)
 
 print('Token: ' + token)
 if VerifyIDToken(token=token,certs_url=certs_url, audience=target_audience):
