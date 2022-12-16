@@ -44,7 +44,7 @@ func main() {
 
 	//
 	// For ADC on GCE/Cloud Run/GCF
-	// default service account must have roles/iam.serviceAccountTokenCreator on itself
+
 	//ts, err := idtoken.NewTokenSource(ctx, aud)
 
 	// With ServiceAccount key
