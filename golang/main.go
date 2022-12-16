@@ -31,7 +31,7 @@ func main() {
 
 	ctx := context.Background()
 
-	// ADC local.
+	// ADC local with impersonation
 	// ADC account must have roles/iam.serviceAccountTokenCreator permission on target-serviceaccount@
 	targetServiceAccount := "target-serviceaccount@YOUR_PROJECT.iam.gserviceaccount.com"
 	ts, err := impersonate.IDTokenSource(ctx,
@@ -44,7 +44,6 @@ func main() {
 
 	//
 	// For ADC on GCE/Cloud Run/GCF
-
 	//ts, err := idtoken.NewTokenSource(ctx, aud)
 
 	// With ServiceAccount key
